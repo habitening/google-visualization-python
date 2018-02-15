@@ -231,47 +231,80 @@ class DataTableTest(unittest.TestCase):
 
   def testAppendData(self):
     # We check a few examples where the format of the data does not match the
-    # description and hen a few valid examples. The test for the content itself
-    # is done inside the ToJSCode and ToJSon functions.
+    # description and then a few valid examples.
     table = DataTable([("a", "number"), ("b", "string")])
     self.assertEqual(0, table.NumberOfRows())
+    expected = {"cols": [{"id": "a", "label": "a", "type": "number"},
+                         {"id": "b", "label": "b", "type": "string"}],
+                "rows": []}
+    self.assertEqual(expected, table._ToJSonObj())
     self.assertRaises(DataTableException,
                       table.AppendData, [[1, "a", True]])
     self.assertRaises(DataTableException,
                       table.AppendData, {1: ["a"], 2: ["b"]})
+    self.assertEqual(0, table.NumberOfRows())
+    self.assertEqual(expected, table._ToJSonObj())
     self.assertEqual(None, table.AppendData([[1, "a"], [2, "b"]]))
     self.assertEqual(2, table.NumberOfRows())
+    expected["rows"].extend([{"c": [{"v": 1}, {"v": "a"}]},
+                             {"c": [{"v": 2}, {"v": "b"}]}])
+    self.assertEqual(expected, table._ToJSonObj())
     self.assertEqual(None, table.AppendData([[3, "c"], [4]]))
     self.assertEqual(4, table.NumberOfRows())
+    expected["rows"].extend([{"c": [{"v": 3}, {"v": "c"}]},
+                             {"c": [{"v": 4}, None]}])
+    self.assertEqual(expected, table._ToJSonObj())
 
     table = DataTable({"a": "number", "b": "string"})
     self.assertEqual(0, table.NumberOfRows())
+    expected["rows"] = []
+    self.assertEqual(expected, table._ToJSonObj())
     self.assertRaises(DataTableException,
                       table.AppendData, [[1, "a"]])
     self.assertRaises(DataTableException,
                       table.AppendData, {5: {"b": "z"}})
+    self.assertEqual(0, table.NumberOfRows())
+    self.assertEqual(expected, table._ToJSonObj())
     self.assertEqual(None, table.AppendData([{"a": 1, "b": "z"}]))
     self.assertEqual(1, table.NumberOfRows())
+    expected["rows"].append({"c": [{"v": 1}, {"v": "z"}]})
+    self.assertEqual(expected, table._ToJSonObj())
 
     table = DataTable({("a", "number"): [("b", "string")]})
     self.assertEqual(0, table.NumberOfRows())
+    expected["rows"] = []
+    self.assertEqual(expected, table._ToJSonObj())
     self.assertRaises(DataTableException,
                       table.AppendData, [[1, "a"]])
     self.assertRaises(DataTableException,
                       table.AppendData, {5: {"b": "z"}})
+    self.assertEqual(0, table.NumberOfRows())
+    self.assertEqual(expected, table._ToJSonObj())
     self.assertEqual(None, table.AppendData({5: ["z"], 6: ["w"]}))
     self.assertEqual(2, table.NumberOfRows())
+    expected["rows"].extend([{"c": [{"v": 5}, {"v": "z"}]},
+                             {"c": [{"v": 6}, {"v": "w"}]}])
+    self.assertEqual(expected, table._ToJSonObj())
 
     table = DataTable({("a", "number"): {"b": "string", "c": "number"}})
     self.assertEqual(0, table.NumberOfRows())
+    expected["cols"].append({"id": "c", "label": "c", "type": "number"})
+    expected["rows"] = []
+    self.assertEqual(expected, table._ToJSonObj())
     self.assertRaises(DataTableException,
                       table.AppendData, [[1, "a"]])
     self.assertRaises(DataTableException,
                       table.AppendData, {1: ["a", 2]})
+    self.assertEqual(0, table.NumberOfRows())
+    self.assertEqual(expected, table._ToJSonObj())
     self.assertEqual(None, table.AppendData({5: {"b": "z", "c": 6},
                                              7: {"c": 8},
                                              9: {}}))
     self.assertEqual(3, table.NumberOfRows())
+    expected["rows"].extend([{"c": [{"v": 5}, {"v": "z"}, {"v": 6}]},
+                             {"c": [{"v": 7}, None, {"v": 8}]},
+                             {"c": [{"v": 9}, None, None]}])
+    self.assertEqual(expected, table._ToJSonObj())
 
   def testToJSCode(self):
     table = DataTable([("a", "number", "A'"), "b\"", ("c", "timeofday")],
@@ -279,17 +312,17 @@ class DataTableTest(unittest.TestCase):
                        [None, "z", time(1, 2, 3)],
                        [(2, "2$"), "w", time(2, 3, 4)]])
     self.assertEqual(3, table.NumberOfRows())
-    self.assertEqual((u"var mytab = new google.visualization.DataTable();\n"
-                      u"mytab.addColumn(\"number\", \"A'\", \"a\");\n"
-                      u"mytab.addColumn(\"string\", \"b\\\"\", \"b\\\"\");\n"
-                      u"mytab.addColumn(\"timeofday\", \"c\", \"c\");\n"
-                      u"mytab.addRows(3);\n"
-                      u"mytab.setCell(0, 0, 1);\n"
-                      u"mytab.setCell(1, 1, \"z\");\n"
-                      u"mytab.setCell(1, 2, [1,2,3]);\n"
-                      u"mytab.setCell(2, 0, 2, \"2$\");\n"
-                      u"mytab.setCell(2, 1, \"w\");\n"
-                      u"mytab.setCell(2, 2, [2,3,4]);\n"),
+    self.assertEqual(("var mytab = new google.visualization.DataTable();\n"
+                      "mytab.addColumn(\"number\", \"A'\", \"a\");\n"
+                      "mytab.addColumn(\"string\", \"b\\\"\", \"b\\\"\");\n"
+                      "mytab.addColumn(\"timeofday\", \"c\", \"c\");\n"
+                      "mytab.addRows(3);\n"
+                      "mytab.setCell(0, 0, 1);\n"
+                      "mytab.setCell(1, 1, \"z\");\n"
+                      "mytab.setCell(1, 2, [1,2,3]);\n"
+                      "mytab.setCell(2, 0, 2, \"2$\");\n"
+                      "mytab.setCell(2, 1, \"w\");\n"
+                      "mytab.setCell(2, 2, [2,3,4]);\n"),
                      table.ToJSCode("mytab"))
 
     table = DataTable({("a", "number"): {"b": "date", "c": "datetime"}},
@@ -329,6 +362,7 @@ class DataTableTest(unittest.TestCase):
                        [None, u"\u05d0"],
                        [None, u"\u05d1".encode("utf-8")]])
     self.assertEqual(4, table.NumberOfRows())
+    self.assertEqual(json_obj, table._ToJSonObj())
     result = table.ToJSon()
     if not isinstance(result, six.text_type):
       result = result.decode("utf-8")
@@ -339,6 +373,7 @@ class DataTableTest(unittest.TestCase):
     table.AppendData([[-1, "w", False]])
     self.assertEqual(5, table.NumberOfRows())
     json_obj["rows"].append({"c": [{"v": -1}, {"v": "w"}, {"v": False}]})
+    self.assertEqual(json_obj, table._ToJSonObj())
     result = table.ToJSon()
     if not isinstance(result, six.text_type):
       result = result.decode("utf-8")
@@ -383,6 +418,7 @@ class DataTableTest(unittest.TestCase):
     table = DataTable({"a\"": ("b", "number", "bb\"", {})},
                       {"a1": 1, "a2": 2, "a3": 3})
     self.assertEqual(3, table.NumberOfRows())
+    self.assertEqual(json_obj, table._ToJSonObj())
     self.assertEqual(json.dumps(json_obj, separators=(",", ":")),
                      table.ToJSon())
 
@@ -402,8 +438,7 @@ class DataTableTest(unittest.TestCase):
                          {"c": [None,
                                 {"v": "z", "p": {"cell_cp": "cell_v"}},
                                 {"v": True}]},
-                         {"c": [{"v": 3}, None, None],
-                          "p": {"row_cp2": "row_v2"}}],
+                         {"c": [{"v": 3}, None, None]}],
                 "p": {"global_cp": "global_v"}}
     jscode = ("var mytab = new google.visualization.DataTable();\n"
               "mytab.setTableProperties({\"global_cp\":\"global_v\"});\n"
@@ -423,10 +458,24 @@ class DataTableTest(unittest.TestCase):
     table = DataTable([("a", "number", "A", {"col_cp": "col_v"}), "b",
                        ("c", "boolean")],
                       custom_properties={"global_cp": "global_v"})
+    expected = dict(json_obj)
+    expected["rows"] = []
+    self.assertEqual(expected, table._ToJSonObj())
+    expected = jscode[:278] + "0);\n"
+    self.assertEqual(expected, table.ToJSCode("mytab"))
     table.AppendData([[1, None, (None, None, {"null_cp": "null_v"})]],
                      custom_properties={"row_cp": "row_v"})
+    expected = dict(json_obj)
+    expected["rows"] = json_obj["rows"][:1]
+    self.assertEqual(expected, table._ToJSonObj())
+    expected = jscode[:408].replace("mytab.addRows(3);", "mytab.addRows(1);")
+    self.assertEqual(expected, table.ToJSCode("mytab"))
     table.AppendData([[None, ("z", None, {"cell_cp": "cell_v"}), True], [3]])
+    self.assertEqual(json_obj, table._ToJSonObj())
+    self.assertEqual(jscode[:513], table.ToJSCode("mytab"))
     table.SetRowsCustomProperties(2, {"row_cp2": "row_v2"})
+    json_obj["rows"][2]["p"] = {"row_cp2": "row_v2"}
+    self.assertEqual(json_obj, table._ToJSonObj())
     self.assertEqual(json.dumps(json_obj, separators=(",", ":")),
                      table.ToJSon())
     self.assertEqual(jscode, table.ToJSCode("mytab"))
@@ -483,7 +532,7 @@ class DataTableTest(unittest.TestCase):
         "</tbody>") + html_table_footer
     table = DataTable([("a", "number", "A<"), "b>", ("c", "boolean")],
                       [[(1, "$1")], [None, "<z>", True]])
-    self.assertEqual(init_data_html.replace("\n", ""), table.ToHtml())
+    self.assertEqual(init_data_html, table.ToHtml())
 
     init_data_html = html_table_header + (
         "<thead><tr>"
@@ -501,7 +550,7 @@ class DataTableTest(unittest.TestCase):
                     date(2, 3, 4): [(time(2, 3, 4), "time 2 3 4"),
                                     datetime(1, 2, 3, 4, 5, 6)],
                     date(3, 4, 5): []})
-    self.assertEqual(init_data_html.replace("\n", ""),
+    self.assertEqual(init_data_html,
                      table.ToHtml(columns_order=["t", "d", "dt"]))
 
   def testOrderBy(self):
