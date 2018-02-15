@@ -33,7 +33,6 @@ try:
 except ImportError:
   import cgi as html  # Only used for .escape()
 import json
-import types
 
 import six
 
@@ -46,10 +45,10 @@ class DataTableException(Exception):
 class DataTableJSONEncoder(json.JSONEncoder):
   """JSON encoder that handles date/time/datetime objects correctly."""
 
-  def __init__(self):
-    json.JSONEncoder.__init__(self,
-                              separators=(",", ":"),
-                              ensure_ascii=False)
+  def __init__(self, ensure_ascii=False, separators=(",", ":"),
+               *args, **kwargs):
+    json.JSONEncoder.__init__(self, ensure_ascii=ensure_ascii,
+                              separators=separators, *args, **kwargs)
 
   def default(self, o):
     if isinstance(o, datetime.datetime):
@@ -67,7 +66,7 @@ class DataTableJSONEncoder(json.JSONEncoder):
     elif isinstance(o, datetime.time):
       return [o.hour, o.minute, o.second]
     else:
-      return super(DataTableJSONEncoder, self).default(o)
+      return json.JSONEncoder.default(o)
 
 
 class DataTable(object):
@@ -890,7 +889,9 @@ class DataTable(object):
         else:
           cells_list.append(ensure_str(self.ToString(value)))
       writer.writerow(cells_list)
-    return csv_buffer.getvalue()
+    value = csv_buffer.getvalue()
+    csv_buffer.close()
+    return value
 
   def ToTsvExcel(self, columns_order=None, order_by=()):
     """Returns a file in tab-separated-format readable by MS Excel.
