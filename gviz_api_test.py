@@ -367,9 +367,7 @@ class DataTableTest(unittest.TestCase):
     result = table.ToJSon()
     if not isinstance(result, six.text_type):
       result = result.decode("utf-8")
-    self.assertEqual(json.dumps(json_obj, ensure_ascii=False,
-                                cls=DataTableJSONEncoder,
-                                separators=(",", ":")),
+    self.assertEqual(json.dumps(json_obj, cls=DataTableJSONEncoder),
                      result)
     table.AppendData([[-1, "w", False]])
     self.assertEqual(5, table.NumberOfRows())
@@ -378,9 +376,7 @@ class DataTableTest(unittest.TestCase):
     result = table.ToJSon()
     if not isinstance(result, six.text_type):
       result = result.decode("utf-8")
-    self.assertEqual(json.dumps(json_obj, ensure_ascii=False,
-                                cls=DataTableJSONEncoder,
-                                separators=(",", ":")),
+    self.assertEqual(json.dumps(json_obj, cls=DataTableJSONEncoder),
                      result)
 
     json_obj = {"cols":
@@ -395,9 +391,7 @@ class DataTableTest(unittest.TestCase):
     self.assertEqual(1, table.NumberOfRows())
     self.assertEqual(json_obj,
                      table._ToJSonObj(columns_order=["t", "d", "dt"]))
-    self.assertEqual(json.dumps(json_obj, ensure_ascii=False,
-                                cls=DataTableJSONEncoder,
-                                separators=(",", ":")),
+    self.assertEqual(json.dumps(json_obj, cls=DataTableJSONEncoder),
                      table.ToJSon(columns_order=["t", "d", "dt"]))
 
     json_obj["rows"] = [
@@ -412,9 +406,7 @@ class DataTableTest(unittest.TestCase):
     self.assertEqual(2, table.NumberOfRows())
     self.assertEqual(json_obj,
                      table._ToJSonObj(columns_order=["t", "d", "dt"]))
-    self.assertEqual(json.dumps(json_obj, ensure_ascii=False,
-                                cls=DataTableJSONEncoder,
-                                separators=(",", ":")),
+    self.assertEqual(json.dumps(json_obj, cls=DataTableJSONEncoder),
                      table.ToJSon(columns_order=["t", "d", "dt"]))
 
     json_obj = {
@@ -427,9 +419,7 @@ class DataTableTest(unittest.TestCase):
                       {"a1": 1, "a2": 2, "a3": 3})
     self.assertEqual(3, table.NumberOfRows())
     self.assertEqual(json_obj, table._ToJSonObj())
-    self.assertEqual(json.dumps(json_obj, ensure_ascii=False,
-                                cls=DataTableJSONEncoder,
-                                separators=(",", ":")),
+    self.assertEqual(json.dumps(json_obj, cls=DataTableJSONEncoder),
                      table.ToJSon())
 
   def testCustomProperties(self):
@@ -486,9 +476,7 @@ class DataTableTest(unittest.TestCase):
     table.SetRowsCustomProperties(2, {"row_cp2": "row_v2"})
     json_obj["rows"][2]["p"] = {"row_cp2": "row_v2"}
     self.assertEqual(json_obj, table._ToJSonObj())
-    self.assertEqual(json.dumps(json_obj, ensure_ascii=False,
-                                cls=DataTableJSONEncoder,
-                                separators=(",", ":")),
+    self.assertEqual(json.dumps(json_obj, cls=DataTableJSONEncoder),
                      table.ToJSon())
     self.assertEqual(jscode, table.ToJSCode("mytab"))
 

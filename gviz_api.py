@@ -47,8 +47,8 @@ class DataTableJSONEncoder(json.JSONEncoder):
 
   def __init__(self, ensure_ascii=False, separators=(",", ":"),
                *args, **kwargs):
-    json.JSONEncoder.__init__(self, ensure_ascii=ensure_ascii,
-                              separators=separators, *args, **kwargs)
+    json.JSONEncoder.__init__(self, ensure_ascii=False,
+                              separators=(",", ":"), *args, **kwargs)
 
   def default(self, o):
     if isinstance(o, datetime.datetime):
