@@ -108,12 +108,11 @@ class DataTableTest(unittest.TestCase):
 
     json_obj = json.loads(table.ToJSon())
     for i, row in enumerate(json_obj["rows"]):
-      utf8_str = the_strings[i]
-      if isinstance(utf8_str, six.text_type):
-        utf8_str = utf8_str.encode("utf-8")
-
-      out_str = row["c"][0]["v"]
-      self.assertEqual(out_str.encode("utf-8"), utf8_str)
+      if isinstance(the_strings[i], six.binary_type):
+        expected = six.text_type(the_strings[i], encoding="utf-8")
+      else:
+        expected = the_strings[i]
+      self.assertEqual(row["c"][0]["v"], expected)
 
   def testColumnTypeParser(self):
     # Checking several wrong formats
@@ -365,8 +364,6 @@ class DataTableTest(unittest.TestCase):
     self.assertEqual(4, table.NumberOfRows())
     self.assertEqual(json_obj, table._ToJSonObj())
     result = table.ToJSon()
-    if not isinstance(result, six.text_type):
-      result = result.decode("utf-8")
     self.assertEqual(json.dumps(json_obj, cls=DataTableJSONEncoder),
                      result)
     table.AppendData([[-1, "w", False]])
@@ -374,8 +371,6 @@ class DataTableTest(unittest.TestCase):
     json_obj["rows"].append({"c": [{"v": -1}, {"v": "w"}, {"v": False}]})
     self.assertEqual(json_obj, table._ToJSonObj())
     result = table.ToJSon()
-    if not isinstance(result, six.text_type):
-      result = result.decode("utf-8")
     self.assertEqual(json.dumps(json_obj, cls=DataTableJSONEncoder),
                      result)
 

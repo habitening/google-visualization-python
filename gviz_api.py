@@ -45,9 +45,9 @@ class DataTableException(Exception):
 class DataTableJSONEncoder(json.JSONEncoder):
   """JSON encoder that handles date/time/datetime objects correctly."""
 
-  def __init__(self, ensure_ascii=False, separators=(",", ":"),
+  def __init__(self, ensure_ascii=True, separators=(",", ":"),
                *args, **kwargs):
-    json.JSONEncoder.__init__(self, ensure_ascii=False,
+    json.JSONEncoder.__init__(self, ensure_ascii=True,
                               separators=(",", ":"), *args, **kwargs)
 
   def default(self, o):
@@ -183,8 +183,8 @@ class DataTable(object):
                   "timeofday".
 
     Returns:
-      An item of the Python type appropriate to the given value_type. Strings
-      are also converted to Unicode using UTF-8 encoding if necessary.
+      An item of the Python type appropriate to the given value_type. Byte
+      strings are also converted to Unicode using UTF-8 encoding.
       If a tuple is given, it should be in one of the following forms:
         - (value, formatted value)
         - (value, formatted value, custom properties)
@@ -216,7 +216,7 @@ class DataTable(object):
       if (len(value) not in [2, 3] or
           (len(value) == 3 and not isinstance(value[2], dict))):
         raise DataTableException("Wrong format for value and formatting - %s." %
-                                 str(value))
+                                 six.text_type(value))
       if not isinstance(value[1], six.string_types + (type(None),)):
         raise DataTableException("Formatted value is not string, given %s." %
                                  type(value[1]))
@@ -237,7 +237,7 @@ class DataTable(object):
     elif value_type == "string":
       if isinstance(value, six.text_type):
         return value
-      if isinstance(value, bytes):
+      if isinstance(value, six.binary_type):
         return six.text_type(value, encoding="utf-8")
       else:
         return six.text_type(value)
@@ -301,12 +301,12 @@ class DataTable(object):
     elif isinstance(value, (datetime.datetime,
                             datetime.date,
                             datetime.time)):
-      return str(value)
+      return six.text_type(value)
     elif isinstance(value, six.text_type):
       return value
     elif isinstance(value, bool):
-      return str(value).lower()
-    elif isinstance(value, bytes):
+      return six.text_type(value).lower()
+    elif isinstance(value, six.binary_type):
       return six.text_type(value, encoding="utf-8")
     else:
       return six.text_type(value)
@@ -337,12 +337,12 @@ class DataTable(object):
     if not description:
       raise DataTableException("Description error: empty description given")
 
-    if not isinstance(description, (six.string_types, tuple)):
-      raise DataTableException("Description error: expected either string or "
-                               "tuple, got %s." % type(description))
-
     if isinstance(description, six.string_types):
       description = (description,)
+
+    if not isinstance(description, tuple):
+      raise DataTableException("Description error: expected either string or "
+                               "tuple, got %s." % type(description))
 
     # According to the tuple's length, we fill the keys
     # We verify everything is of type string
@@ -863,13 +863,14 @@ class DataTable(object):
       columns_order = [col["id"] for col in self.__columns]
     col_dict = dict([(col["id"], col) for col in self.__columns])
 
-    def ensure_str(s):
-      "Compatibility function. Ensures using of str rather than unicode."
-      if isinstance(s, str):
+    def _to_utf8(s):
+      """Return Python 2.x Unicode string encoded as UTF-8 binary string."""
+      if six.PY2 and isinstance(s, six.text_type):
+        return s.encode("utf-8")
+      else:
         return s
-      return s.encode("utf-8")
 
-    writer.writerow([ensure_str(col_dict[col]["label"])
+    writer.writerow([_to_utf8(col_dict[col]["label"])
                      for col in columns_order])
 
     # We now go over the data and add each row
@@ -883,11 +884,11 @@ class DataTable(object):
         if isinstance(value, tuple):
           # We have a formatted value. Using it only for date/time types.
           if col_dict[col]["type"] in ["date", "datetime", "timeofday"]:
-            cells_list.append(ensure_str(self.ToString(value[1])))
+            cells_list.append(_to_utf8(self.ToString(value[1])))
           else:
-            cells_list.append(ensure_str(self.ToString(value[0])))
+            cells_list.append(_to_utf8(self.ToString(value[0])))
         else:
-          cells_list.append(ensure_str(self.ToString(value)))
+          cells_list.append(_to_utf8(self.ToString(value)))
       writer.writerow(cells_list)
     value = csv_buffer.getvalue()
     csv_buffer.close()
@@ -1004,10 +1005,8 @@ class DataTable(object):
       DataTableException: The data does not match the type.
     """
 
-    encoded_response_str = DataTableJSONEncoder().encode(self._ToJSonObj(columns_order, order_by))
-    if not isinstance(encoded_response_str, str):
-      return encoded_response_str.encode("utf-8")
-    return encoded_response_str
+    return DataTableJSONEncoder().encode(
+      self._ToJSonObj(columns_order, order_by))
 
   def ToJSonResponse(self, columns_order=None, order_by=(), req_id=0,
                      response_handler="google.visualization.Query.setResponse"):
@@ -1040,13 +1039,11 @@ class DataTable(object):
 
     response_obj = {
         "version": "0.6",
-        "reqId": str(req_id),
+        "reqId": six.text_type(req_id),
         "table": self._ToJSonObj(columns_order, order_by),
         "status": "ok"
     }
     encoded_response_str = DataTableJSONEncoder().encode(response_obj)
-    if not isinstance(encoded_response_str, str):
-      encoded_response_str = encoded_response_str.encode("utf-8")
     return "%s(%s);" % (response_handler, encoded_response_str)
 
   def ToResponse(self, columns_order=None, order_by=(), tqx=""):

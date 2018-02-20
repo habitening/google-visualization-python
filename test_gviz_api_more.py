@@ -14,6 +14,11 @@ class MoreDataTableTest(unittest.TestCase):
                                'date', 'datetime', 'timeofday')
         """Tuple of string accepted value types."""
 
+    def assertASCII(self, s):
+        """Test the string s only contains ASCII characters."""
+        for c in s:
+            self.assertLess(ord(c), 128)
+
     def test_DataTableJSONEncoder(self):
         """Test the JSON encoder."""
         encoder = gviz_api.DataTableJSONEncoder()
@@ -503,6 +508,7 @@ class MoreDataTableTest(unittest.TestCase):
             'cols': [{'id': 'name', 'label': 'name', 'type': 'string'},
                      {'id': 'value', 'label': 'value', 'type': 'number'}],
             'rows': [{'c': [{'v': u'fo\u00f6b\u00e4r'}, {'v': 42}]}]})
+        self.assertASCII(data_table.ToJSon())
         self.assertRaises(IndexError, data_table.SetRowsCustomProperties,
                           1, {'foo': 'bar'})
         data_table.SetRowsCustomProperties([-1], {'foo': 'bar'})
@@ -512,6 +518,7 @@ class MoreDataTableTest(unittest.TestCase):
                      {'id': 'value', 'label': 'value', 'type': 'number'}],
             'rows': [{'c': [{'v': u'fo\u00f6b\u00e4r'}, {'v': 42}],
                       'p': {'foo': 'bar'}}]})
+        self.assertASCII(data_table.ToJSon())
 
         data_table = gviz_api.DataTable(
             {('name', 'string'): ('value', 'number')})
@@ -556,6 +563,7 @@ class MoreDataTableTest(unittest.TestCase):
             'cols': [{'id': 'name', 'label': 'name', 'type': 'string'},
                      {'id': 'value', 'label': 'value', 'type': 'number'}],
             'rows': [{'c': [{'v': u'fo\u00f6b\u00e4r'}, {'v': 42}]}]})
+        self.assertASCII(data_table.ToJSon())
 
 
 if __name__ == '__main__':
