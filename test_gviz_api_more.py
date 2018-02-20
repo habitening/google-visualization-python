@@ -565,6 +565,33 @@ class MoreDataTableTest(unittest.TestCase):
             'rows': [{'c': [{'v': u'fo\u00f6b\u00e4r'}, {'v': 42}]}]})
         self.assertASCII(data_table.ToJSon())
 
+    def test_xss(self):
+        """Test cross site scripting (XSS) vulnerability."""
+        data_table = gviz_api.DataTable(
+            [('name', 'string'), ('value', 'number')])
+        for attack_string in [
+            '<foobar>',
+            '</barbaz>',
+            '<img src=1 onerror=alert(1)>',
+            "</script><script>alert('hax00rred');</script>"]:
+            data_table.LoadData([(attack_string, 42)])
+            self.assertIn(attack_string, data_table.ToJSCode('foobar'))
+            self.assertNotIn(attack_string, data_table.ToHtml())
+            self.assertIn(attack_string, data_table.ToJSon())
+
+    def test_xss_csv(self):
+        """Test cross site scripting (XSS) is not a problem for CSV formats."""
+        attack_string = ',foo,,bar,,,'
+        data_table = gviz_api.DataTable(
+            [('name', 'string'), ('value', 'number')], [(attack_string, 42)])
+        self.assertIn('"' + attack_string + '"', data_table.ToCsv())
+
+        attack_string = attack_string.replace(',', '\t')
+        data_table.LoadData([(attack_string, 42)])
+        expected = '"' + attack_string + '"'
+        expected = expected.encode('UTF-16LE')
+        self.assertIn(expected, data_table.ToTsvExcel())
+
 
 if __name__ == '__main__':
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(MoreDataTableTest)
