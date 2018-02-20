@@ -166,9 +166,10 @@ class DataTable(object):
     """
     self.__columns = self.TableDescriptionParser(table_description)
     self.__data = []
-    self.custom_properties = {}
-    if custom_properties is not None:
+    if isinstance(custom_properties, dict):
       self.custom_properties = custom_properties
+    else:
+      self.custom_properties = {}
     if data:
       self.LoadData(data)
 
@@ -214,7 +215,7 @@ class DataTable(object):
     if isinstance(value, tuple):
       # In case of a tuple, we run the same function on the value itself and
       # add the formatted value.
-      if (len(value) not in [2, 3] or
+      if (len(value) not in (2, 3) or
           (len(value) == 3 and not isinstance(value[2], dict))):
         raise DataTableException("Wrong format for value and formatting - %s." %
                                  six.text_type(value))
@@ -494,7 +495,7 @@ class DataTable(object):
                                " description")
 
     # To differentiate between the two cases of more levels below or this is
-    # the most inner dictionary, we consider the number of keys (more then one
+    # the most inner dictionary, we consider the number of keys (more than one
     # key is indication for most inner dictionary) and the type of the key and
     # value in case of only 1 key (if the type of key is string and the type of
     # the value is a tuple of 0-3 items, we assume this is the most inner
