@@ -27,8 +27,6 @@ except ImportError:
   import simplejson as json
 import unittest
 
-import six
-
 from gviz_api import DataTable
 from gviz_api import DataTableException
 from gviz_api import DataTableJSONEncoder
@@ -108,8 +106,8 @@ class DataTableTest(unittest.TestCase):
 
     json_obj = json.loads(table.ToJSon())
     for i, row in enumerate(json_obj["rows"]):
-      if isinstance(the_strings[i], six.binary_type):
-        expected = six.text_type(the_strings[i], encoding="utf-8")
+      if isinstance(the_strings[i], str):
+        expected = unicode(the_strings[i], encoding="utf-8")
       else:
         expected = the_strings[i]
       self.assertEqual(row["c"][0]["v"], expected)
@@ -509,7 +507,7 @@ class DataTableTest(unittest.TestCase):
                                        datetime(1901, 2, 3, 4, 5, 6)],
                     date(1903, 4, 5): []})
     csv_string = table.ToCsv()
-    if not isinstance(csv_string, six.text_type):
+    if not isinstance(csv_string, unicode):
         csv_string = csv_string.decode("utf-8")
     self.assertEqual(csv_string.replace(",", "\t").encode("UTF-16LE"),
                      table.ToTsvExcel())

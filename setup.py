@@ -51,6 +51,6 @@ setuptools.setup(
     ],
     keywords="gviz,google visualization",
     py_modules=["gviz_api"],
-    install_requires=["six"],
+    install_requires=[],
     test_suite="gviz_api_test",
 )
