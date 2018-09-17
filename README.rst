@@ -21,6 +21,26 @@ data source for visualizations built on the
   http://code.google.com/apis/visualization/documentation/queries.html)
 
 
+Pure ASCII
+----------
+The helper library does its own Unicode escaping by encoding JSON strings in
+UTF-8. Alas, the resulting JSON string
+
+- is not usable in a template system like Jinja2 which only accepts pure ASCII
+  ``str`` or ``unicode`` strings
+- is harder to sanitize to prevent cross site scripting (XSS)
+- is unnecessary because Unicode characters can be used in JSON
+- is overly complex because JSON can escape Unicode with hexadecimal escapes
+
+This fork outputs pure ASCII JSON strings to eliminate these problems and
+ensure maximal interoperability. Unicode code points are encoded with
+hexadecimal escapes per `the standard <http://json.org/>`_.
+
+**Why would you embed a JSON string in a template?** Having the JSON string in
+a HTML page saves a JSON request to retrieve the data and makes the page load
+faster.
+
+
 License
 -------
 
