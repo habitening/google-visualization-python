@@ -41,6 +41,11 @@ a HTML page saves a JSON request to retrieve the data and makes the page load
 faster.
 
 
+Backport
+--------
+This branch backports the code for use in Python 2.x.
+
+
 License
 -------
 
